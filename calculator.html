@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>간단한 계산기</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #1e1e2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .calculator {
+      background: #2b2b3d;
+      padding: 20px;
+      border-radius: 16px;
+      width: 300px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .display {
+      background: #111;
+      color: #fff;
+      font-size: 2.2rem;
+      text-align: right;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      min-height: 1.2em;
+      overflow: hidden;
+      word-break: break-all;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    button {
+      font-size: 1.3rem;
+      padding: 18px 0;
+      border: none;
+      border-radius: 10px;
+      background: #44475a;
+      color: #f8f8f2;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.15); }
+    button.op { background: #ff9f43; }
+    button.func { background: #6272a4; }
+    button.zero { grid-column: span 2; }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+      <button class="func" data-action="clear">AC</button>
+      <button class="func" data-action="sign">+/-</button>
+      <button class="func" data-action="percent">%</button>
+      <button class="op" data-op="/">÷</button>
+
+      <button data-num="7">7</button>
+      <button data-num="8">8</button>
+      <button data-num="9">9</button>
+      <button class="op" data-op="*">×</button>
+
+      <button data-num="4">4</button>
+      <button data-num="5">5</button>
+      <button data-num="6">6</button>
+      <button class="op" data-op="-">−</button>
+
+      <button data-num="1">1</button>
+      <button data-num="2">2</button>
+      <button data-num="3">3</button>
+      <button class="op" data-op="+">+</button>
+
+      <button class="zero" data-num="0">0</button>
+      <button data-action="dot">.</button>
+      <button class="op" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+
+    let current = '0';     // 화면에 보이는 현재 입력값
+    let previous = null;   // 연산자 앞의 피연산자
+    let operator = null;   // 대기 중인 연산자
+    let resetNext = false; // true면 다음 숫자 입력 시 화면을 새로 시작
+
+    function render() {
+      display.textContent = current;
+    }
+
+    function inputDigit(d) {
+      if (resetNext) {
+        current = d;
+        resetNext = false;
+      } else {
+        current = current === '0' ? d : current + d;
+      }
+      render();
+    }
+
+    function inputDot() {
+      if (resetNext) {
+        current = '0.';
+        resetNext = false;
+      } else if (!current.includes('.')) {
+        current += '.';
+      }
+      render();
+    }
+
+    function clearAll() {
+      current = '0';
+      previous = null;
+      operator = null;
+      resetNext = false;
+      render();
+    }
+
+    function toggleSign() {
+      if (current === '0') return;
+      current = current.startsWith('-') ? current.slice(1) : '-' + current;
+      render();
+    }
+
+    function percent() {
+      current = String(parseFloat(current) / 100);
+      render();
+    }
+
+    // TODO(human): 두 수와 연산자로 결과를 계산하는 함수를 완성해 주세요.
+    // 계산이 불가능하면 null을 반환하고, 가능하면 number 결과를 반환합니다.
+    function compute(a, op, b) {
+      if (op == "+") {
+        res = a + b;
+      } else {
+        res = null;
+      }
+
+
+      return res;
+    }
+
+    function showError() {
+      current = 'Error';
+      previous = null;
+      operator = null;
+      resetNext = true;
+      render();
+    }
+
+    function chooseOperator(op) {
+      if (operator && !resetNext) {
+        // 연산자를 연속으로 누르면 앞선 계산을 먼저 끝냅니다. (예: 2 + 3 × → 5 ×)
+        const result = compute(previous, operator, parseFloat(current));
+        if (result === null) return showError();
+        current = String(result);
+        previous = result;
+        render();
+      } else {
+        previous = parseFloat(current);
+      }
+      operator = op;
+      resetNext = true;
+    }
+
+    function equals() {
+      if (!operator) return;
+      const result = compute(previous, operator, parseFloat(current));
+      if (result === null) return showError();
+      current = String(result);
+      previous = null;
+      operator = null;
+      resetNext = true;
+      render();
+    }
+
+    // 버튼 클릭은 이벤트 위임으로 한 번에 처리합니다.
+    document.querySelector('.buttons').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const { num, op, action } = btn.dataset;
+      if (num !== undefined) return inputDigit(num);
+      if (op !== undefined) return chooseOperator(op);
+
+      switch (action) {
+        case 'clear':   clearAll(); break;
+        case 'sign':    toggleSign(); break;
+        case 'percent': percent(); break;
+        case 'dot':     inputDot(); break;
+        case 'equals':  equals(); break;
+      }
+    });
+
+    // 키보드 입력도 같은 함수를 호출합니다.
+    document.addEventListener('keydown', (e) => {
+      if (/^[0-9]$/.test(e.key)) inputDigit(e.key);
+      else if (e.key === '.') inputDot();
+      else if (['+', '-', '*', '/'].includes(e.key)) chooseOperator(e.key);
+      else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); equals(); }
+      else if (e.key === 'Escape') clearAll();
+    });
+  </script>
+</body>
+</html>

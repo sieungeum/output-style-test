@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!-- 이 문서가 HTML 문서이고 최신 HTML 규칙을 따른다고 브라우저에게 알려줍니다 -->
+<html lang="ko">
+<head>
+  <!-- 문서의 "설정 영역": 화면에 보이지 않는 정보를 담습니다 -->
+  <meta charset="UTF-8" />  <!-- 한글이 깨지지 않도록 문자 인코딩을 UTF-8로 지정 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <!-- 휴대폰 화면에서도 크기가 맞게 보이도록 설정 -->
+  <title>카운터 앱</title>  <!-- 브라우저 탭에 표시되는 제목 -->
+
+  <!-- Tailwind CSS: 미리 만들어진 스타일 클래스를 HTML 안에서 바로 쓸 수 있게 해주는 도구 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- body: 화면에 실제로 보이는 모든 내용이 들어가는 곳 -->
+<!-- min-h-screen: 최소 높이를 화면 전체로, flex items-center justify-center: 가운데 정렬 -->
+<body class="min-h-screen bg-slate-100 flex items-center justify-center">
+
+  <!-- main: 카운터 "카드" 역할을 하는 상자 -->
+  <!-- bg-white(흰 배경), rounded-2xl(둥근 모서리), shadow-lg(그림자), p-8(안쪽 여백) -->
+  <main class="bg-white rounded-2xl shadow-lg p-8 text-center w-80">
+
+    <!-- 제목 -->
+    <h1 class="text-2xl font-bold text-blue-800 mb-6">카운터</h1>
+
+    <!-- 숫자 표시 영역 -->
+    <!-- id="count": JavaScript가 이 요소를 찾을 때 쓰는 "이름표" -->
+    <p id="count" class="text-7xl font-bold text-blue-600 mb-8">0</p>
+
+    <!-- 버튼들을 가로로 나란히 놓는 상자 -->
+    <div class="flex gap-3 justify-center">
+      <!-- 감소 버튼 (-1) -->
+      <button id="decrease-btn"
+        class="px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-95 transition">
+        -1
+      </button>
+
+      <!-- 리셋 버튼 (0으로 되돌리기) -->
+      <button id="reset-btn"
+        class="px-5 py-3 rounded-lg bg-blue-400 text-white font-semibold hover:bg-blue-500 active:scale-95 transition">
+        리셋
+      </button>
+
+      <!-- 증가 버튼 (+1) -->
+      <button id="increase-btn"
+        class="px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-95 transition">
+        +1
+      </button>
+    </div>
+  </main>
+
+  <!-- JavaScript: 버튼을 누르면 무엇이 일어날지 정하는 "두뇌" 역할 -->
+  <script>
+    // 1) 현재 카운트 값을 저장하는 변수 (처음 시작 값은 0)
+    //    let: 나중에 값을 바꿀 수 있는 변수를 만드는 키워드
+    let count = 0;
+
+    // 2) HTML에서 필요한 요소를 "이름표(id)"로 찾아서 변수에 담아둡니다
+    //    document.getElementById('이름'): 해당 id를 가진 요소를 찾아 줍니다
+    const countEl = document.getElementById('count');
+    const increaseBtn = document.getElementById('increase-btn');
+    const decreaseBtn = document.getElementById('decrease-btn');
+    const resetBtn = document.getElementById('reset-btn');
+
+    // 3) 화면 갱신 함수: 변수 count의 값을 화면의 숫자 칸에 그대로 적어 줍니다
+    //    (데이터는 count에 있고, 화면은 이 함수로 맞춰 줍니다)
+    function render() {
+      countEl.textContent = count;
+    }
+
+    // 4) 버튼에 "클릭되면 이걸 해라"라는 동작을 연결합니다
+    //    addEventListener('click', 함수): 클릭(click) 이벤트가 생기면 함수를 실행
+    increaseBtn.addEventListener('click', () => {
+      count = count + 1;   // 현재 값에 1을 더합니다
+      render();            // 바뀐 값을 화면에 보여줍니다
+    });
+
+    decreaseBtn.addEventListener('click', () => {
+      count = count - 1;   // 현재 값에서 1을 뺍니다
+      render();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      count = 0;           // 값을 0으로 되돌립니다
+      render();
+    });
+
+    // 5) 페이지를 처음 열었을 때도 화면에 0이 보이도록 한 번 그려 줍니다
+    render();
+  </script>
+</body>
+</html>

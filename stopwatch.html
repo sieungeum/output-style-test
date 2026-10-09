@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- 이 문서가 HTML 문서이고 최신 HTML 규칙을 따른다고 알려줍니다 -->
+<html lang="ko">
+<head>
+  <!-- 화면에는 보이지 않는 설정 영역입니다 -->
+  <meta charset="UTF-8" />  <!-- 한글이 깨지지 않도록 UTF-8 인코딩 지정 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <!-- 휴대폰 화면에서도 크기가 맞게 보이도록 설정 -->
+  <title>스톱워치</title>  <!-- 브라우저 탭에 보이는 제목 -->
+
+  <!-- Tailwind CSS: 클래스 이름만 써도 스타일을 입혀 주는 도구 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- body: 화면 전체 바탕. 내용을 화면 가운데에 놓습니다 -->
+<body class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+
+  <!-- main: 흰색 둥근 "카드" 상자 -->
+  <main class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm text-center">
+
+    <!-- 제목 -->
+    <h1 class="text-2xl font-bold text-blue-800 mb-6">스톱워치</h1>
+
+    <!-- 시간 표시 영역 -->
+    <!-- id="display": JavaScript가 이 칸을 찾아 시간을 바꿔 넣는 이름표 -->
+    <!-- tabular-nums: 숫자 너비를 똑같이 맞춰서 숫자가 바뀔 때 글자가 흔들리지 않게 함 -->
+    <p id="display" class="text-6xl font-bold text-blue-600 tabular-nums mb-8">00:00:00</p>
+
+    <!-- 버튼들을 가로로 나란히 놓는 상자 -->
+    <div class="flex gap-3 justify-center">
+      <!-- 시작/일시정지 버튼: 글자는 JavaScript가 상황에 맞게 바꿉니다 -->
+      <button id="toggle-btn"
+        class="flex-1 px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-95 transition">
+        시작
+      </button>
+
+      <!-- 리셋 버튼: 시간을 00:00:00으로 되돌립니다 -->
+      <button id="reset-btn"
+        class="flex-1 px-5 py-3 rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 active:scale-95 transition">
+        리셋
+      </button>
+    </div>
+  </main>
+
+  <!-- JavaScript: 시간을 재고, 버튼을 처리하는 "두뇌" -->
+  <script>
+    // 1) 스톱워치의 상태를 기억하는 변수들 (모두 밀리초(ms) 단위)
+    //    1초 = 1000ms
+    let elapsed = 0;    // 일시정지 전까지 쌓인 시간 (지금까지 "모아 둔" 시간)
+    let startTime = 0;  // 현재 달리기 시작한 시각 (Date.now()로 기록)
+    let timerId = null; // 주기적으로 화면을 갱신하는 타이머의 번호표 (null이면 멈춘 상태)
+
+    // 2) HTML에서 필요한 부품을 이름표(id)로 찾아 둡니다
+    const display = document.getElementById('display');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const resetBtn = document.getElementById('reset-btn');
+
+    // 3) 밀리초를 "00:00:00" 형식의 글자로 바꾸는 함수
+    function format(ms) {
+      const totalSec = Math.floor(ms / 1000);       // 밀리초 → 전체 초 (소수점 버림)
+      const h = Math.floor(totalSec / 3600);        // 시: 3600초 = 1시간
+      const m = Math.floor((totalSec % 3600) / 60); // 분: 시간을 뺀 나머지를 60으로 나눔
+      const s = totalSec % 60;                      // 초: 60으로 나눈 나머지
+
+      // padStart(2, '0'): 한 자리 숫자면 앞에 0을 붙여 두 자리로 맞춤 (5 → "05")
+      // map: 세 숫자를 각각 두 자리 글자로 바꾸고, join: ':'로 이어 붙임
+      return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+    }
+
+    // 4) 현재 시간을 계산해서 화면에 보여 주는 함수
+    function render() {
+      // 달리는 중이면: 모아 둔 시간 + (지금 시각 - 출발 시각)
+      // 멈춘 중이면: 모아 둔 시간 그대로
+      const now = timerId ? elapsed + (Date.now() - startTime) : elapsed;
+      display.textContent = format(now);
+
+      // 버튼 글자도 상황에 맞게 바꿉니다
+      toggleBtn.textContent = timerId ? '일시정지' : '시작';
+    }
+
+    // 5) 시작 함수
+    function start() {
+      startTime = Date.now();            // 지금 이 순간을 출발 시각으로 기록
+      timerId = setInterval(render, 100); // 0.1초마다 render()를 실행해서 화면을 갱신
+    }
+
+    // 6) 일시정지 함수
+    function pause() {
+      elapsed = elapsed + (Date.now() - startTime); // 이번 구간에 흐른 시간을 모아 둠
+      clearInterval(timerId);  // 갱신 타이머를 멈춤
+      timerId = null;          // 번호표를 비워서 "멈춘 상태"임을 표시
+    }
+
+    // 7) 리셋 함수
+    function reset() {
+      clearInterval(timerId);  // 혹시 달리고 있었다면 타이머를 멈춤
+      timerId = null;
+      elapsed = 0;             // 모아 둔 시간을 0으로
+    }
+
+    // 8) 버튼 클릭 동작 연결하기
+    toggleBtn.addEventListener('click', () => {
+      if (timerId) {   // 달리는 중이면 일시정지
+        pause();
+      } else {         // 멈춘 중이면 시작
+        start();
+      }
+      render();        // 바뀐 상태를 화면에 바로 반영
+    });
+
+    resetBtn.addEventListener('click', () => {
+      reset();
+      render();
+    });
+
+    // 9) 처음 열었을 때 00:00:00을 한 번 그리기
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!-- 이 문서가 HTML 문서이고 최신 HTML 규칙을 따른다고 알려줍니다 -->
+<html lang="ko">
+<head>
+  <!-- 화면에는 보이지 않는 설정 영역입니다 -->
+  <meta charset="UTF-8" />  <!-- 한글이 깨지지 않도록 UTF-8 인코딩 지정 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <!-- 휴대폰 화면에서도 크기가 맞게 보이도록 설정 -->
+  <title>할 일 목록</title>  <!-- 브라우저 탭에 보이는 제목 -->
+
+  <!-- Tailwind CSS: 클래스 이름만 써도 스타일을 입혀 주는 도구 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- body: 화면 전체 바탕. 가운데 정렬 + 양옆 여백(p-4) -->
+<body class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+
+  <!-- main: 흰색 둥근 "카드" 상자 -->
+  <!-- max-w-md: 카드의 최대 너비를 제한해서 너무 넓어지지 않게 함 -->
+  <main class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
+
+    <!-- 제목 -->
+    <h1 class="text-2xl font-bold text-blue-800 mb-4">할 일 목록</h1>
+
+    <!-- 입력 영역: 입력칸과 추가 버튼을 가로로 나란히 배치 -->
+    <div class="flex gap-2 mb-6">
+      <!-- input: 사용자가 글자를 입력하는 칸 -->
+      <!-- id: JavaScript가 이 칸을 찾을 때 쓰는 이름표 -->
+      <!-- flex-1: 남는 공간을 전부 차지해서 입력칸을 넓게 만듦 -->
+      <input id="todo-input" type="text" placeholder="할 일을 입력하세요"
+        class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+
+      <!-- 추가 버튼 -->
+      <button id="add-btn"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-95 transition">
+        추가
+      </button>
+    </div>
+
+    <!-- 할 일 목록: 처음에는 비어 있고, JavaScript가 항목을 채워 넣습니다 -->
+    <!-- ul: 목록 상자, space-y-2: 항목 사이에 세로 간격 -->
+    <ul id="todo-list" class="space-y-2"></ul>
+
+    <!-- 목록이 비었을 때 보여 줄 안내 문구 -->
+    <p id="empty-msg" class="text-center text-slate-400 py-6">할 일이 없습니다. 새로 추가해 보세요!</p>
+  </main>
+
+  <!-- JavaScript: 입력, 추가, 체크, 삭제를 처리하는 "두뇌" -->
+  <script>
+    // 1) 할 일 데이터를 담아 두는 "목록 노트"
+    //    각 할 일은 { id, text, done } 모양의 상자(객체)입니다
+    //    id: 구분용 번호표, text: 내용, done: 체크 여부(true/false)
+    let todos = [];
+    let nextId = 1;  // 다음 할 일에 붙일 번호표 (하나 추가될 때마다 1씩 증가)
+
+    // 2) HTML에서 필요한 부품을 이름표(id)로 찾아 둡니다
+    const todoInput = document.getElementById('todo-input');
+    const addBtn = document.getElementById('add-btn');
+    const todoList = document.getElementById('todo-list');
+    const emptyMsg = document.getElementById('empty-msg');
+
+    // 3) 화면 갱신 함수: todos 노트의 내용을 보고 목록 화면을 다시 그립니다
+    function render() {
+      // 기존 목록을 싹 비우고 처음부터 다시 그립니다 (가장 단순하고 확실한 방법)
+      todoList.innerHTML = '';
+
+      // todos 배열의 할 일을 하나씩 꺼내서 화면에 한 줄씩 만듭니다
+      todos.forEach(todo => {
+        // 한 줄(항목)을 담을 li 요소를 새로 만듭니다
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2';
+
+        // 체크박스 만들기
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = todo.done;   // 저장된 상태(done)에 맞게 체크 여부 설정
+        checkbox.className = 'w-5 h-5 accent-blue-600 cursor-pointer';
+        // 체크 상태가 바뀌면(change) toggleTodo 함수를 실행
+        checkbox.addEventListener('change', () => toggleTodo(todo.id));
+
+        // 할 일 내용 글자 만들기
+        const span = document.createElement('span');
+        span.textContent = todo.text;   // textContent: 글자를 "그대로" 넣음 (안전함)
+        span.className = 'flex-1 text-slate-700';
+        // 완료된 항목이면 줄을 긋고 색을 연하게 바꿉니다
+        span.classList.toggle('line-through', todo.done);
+        span.classList.toggle('text-slate-400', todo.done);
+
+        // 삭제 버튼 만들기
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '삭제';
+        delBtn.className = 'px-3 py-1 rounded-lg bg-blue-400 text-white text-sm hover:bg-blue-500 active:scale-95 transition';
+        delBtn.addEventListener('click', () => deleteTodo(todo.id));
+
+        // li 상자 안에 체크박스, 글자, 삭제 버튼을 차례로 넣습니다
+        li.append(checkbox, span, delBtn);
+
+        // 완성된 li를 목록(ul)에 붙입니다
+        todoList.appendChild(li);
+      });
+
+      // 할 일이 하나라도 있으면 안내 문구를 숨기고, 없으면 보여 줍니다
+      // toggle(클래스, 조건): 조건이 true면 클래스를 붙이고, false면 뗍니다
+      emptyMsg.classList.toggle('hidden', todos.length > 0);
+    }
+
+    // 4) 할 일 추가 함수
+    function addTodo() {
+      const text = todoInput.value.trim();   // trim(): 앞뒤 공백 제거
+
+      // 아무것도 입력하지 않았다면 추가하지 않고 입력칸에 커서만 둡니다
+      if (text === '') {
+        todoInput.focus();
+        return;   // 함수를 여기서 끝냅니다
+      }
+
+      // 새 할 일을 목록 노트에 추가합니다 (push: 맨 뒤에 붙이기)
+      todos.push({ id: nextId, text: text, done: false });
+      nextId = nextId + 1;   // 다음 번호표를 준비합니다
+
+      todoInput.value = '';  // 입력칸을 비웁니다
+      todoInput.focus();     // 다음 입력을 바로 할 수 있도록 커서를 둡니다
+      render();              // 화면을 다시 그립니다
+    }
+
+    // 5) 체크 상태 바꾸기 함수
+    function toggleTodo(id) {
+      // find: 목록에서 id가 같은 할 일을 찾습니다
+      const todo = todos.find(t => t.id === id);
+      todo.done = !todo.done;   // ! 는 "반대로"라는 뜻 (true -> false, false -> true)
+      render();
+    }
+
+    // 6) 할 일 삭제 함수
+    function deleteTodo(id) {
+      // filter: "id가 다른 것만 남긴" 새 목록을 만듭니다 = 해당 항목 제거
+      todos = todos.filter(t => t.id !== id);
+      render();
+    }
+
+    // 7) 버튼과 키보드에 동작 연결하기
+    addBtn.addEventListener('click', addTodo);   // 추가 버튼 클릭 시 추가
+    todoInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTodo();          // 입력칸에서 Enter 키를 눌러도 추가
+    });
+
+    // 8) 처음 열었을 때 한 번 그리기 (안내 문구가 보이도록)
+    render();
+  </script>
+</body>
+</html>
